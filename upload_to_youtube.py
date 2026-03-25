@@ -5,6 +5,8 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
+print("Uploading to YouTube...")
+
 creds = Credentials(
     None,
     refresh_token=os.getenv("REFRESH_TOKEN"),
@@ -14,12 +16,12 @@ creds = Credentials(
     scopes=["https://www.googleapis.com/auth/youtube.upload"]
 )
 
-if creds.expired:
-    creds.refresh(Request())
+# Force refresh
+creds.refresh(Request())
 
 youtube = build("youtube", "v3", credentials=creds)
 
-with open("output/metadata.json", "r") as f:
+with open("output/metadata.json", "r", encoding="utf-8") as f:
     meta = json.load(f)
 
 media = MediaFileUpload("output/story_video.mp4", chunksize=-1, resumable=True)
@@ -34,14 +36,13 @@ request = youtube.videos().insert(
             "categoryId": "22"
         },
         "status": {
-            "privacyStatus": "unlisted",   # Change to "public" after testing
+            "privacyStatus": "unlisted",      # Change to "public" after testing
             "selfDeclaredMadeForKids": True
         }
     },
     media_body=media
 )
 
-print("Uploading to YouTube...")
 response = request.execute()
-print("✅ Uploaded successfully!")
+print("✅ Upload successful!")
 print("Video URL: https://youtu.be/" + response["id"])
