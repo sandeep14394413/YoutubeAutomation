@@ -1,22 +1,41 @@
 import os
 import json
-import google.generativeai as genai
-from edge_tts import Communicate
-import subprocess
 import asyncio
-from config import STORY_PROMPT, VOICE, VIDEO_DURATION, VIDEO_WIDTH, VIDEO_HEIGHT
+import subprocess
+from edge_tts import Communicate
 
-# Setup Gemini
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')
+# New official Google GenAI SDK (recommended in 2026)
+import google.genai as genai
+from google.genai.types import GenerateContentConfig
 
-# You can change the topic here or make it dynamic later
-topic = "honesty and friendship"
+# ====================== CONFIG ======================
+GEMINI_MODEL = "gemini-2.5-flash"          # Best free/fast model in March 2026
+
+STORY_PROMPT = """Write a complete, engaging moral story for kids (age 4-8) 
+about {topic}. The story should be 550-750 words, have a clear beginning, 
+middle and end, and teach a good moral lesson. Make it fun and easy to understand."""
+
+VOICE = "en-US-AvaNeural"                  # Warm female voice
+
+VIDEO_DURATION = 300                       # 5 minutes
+VIDEO_WIDTH = 1080
+VIDEO_HEIGHT = 1920                        # Vertical 9:16
+# ===================================================
+
+# Setup Gemini (new SDK)
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+topic = "honesty and friendship"           # Change this anytime
 prompt = STORY_PROMPT.format(topic=topic)
 
-print("Generating story...")
-response = model.generate_content(prompt)
-story_text = response.text.strip()
+print("Generating story with Gemini 2.5 Flash...")
+response = client.models.generate_content(
+    model=GEMINI_MODEL,
+    contents=prompt,
+    config=GenerateContentConfig(temperature=0.7)
+)
+
+story_text = response.text.strip() if response.text else "Error: No story generated."
 
 print(f"Story generated! Length: {len(story_text)} characters")
 
@@ -34,7 +53,7 @@ audio_file = "output/narration.mp3"
 asyncio.run(communicate.save(audio_file))
 print("Voiceover generated!")
 
-# Prepare metadata
+# Prepare metadata for YouTube
 title = f"The Honest Little Rabbit | Moral Story for Kids"
 
 metadata = {
@@ -48,7 +67,7 @@ with open("output/metadata.json", "w", encoding="utf-8") as f:
 
 print("Creating video with FFmpeg...")
 
-# Fixed FFmpeg command - no backslash inside f-string expression
+# Safe escaping for FFmpeg
 escaped_title = title.replace("'", "'\\''")
 escaped_text = story_text.replace("'", "'\\''")[:700]
 
