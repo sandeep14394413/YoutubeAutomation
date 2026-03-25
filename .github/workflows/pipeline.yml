@@ -1,25 +1,71 @@
-name: Unique AI Video Pipeline
+name: 🚀 Unique AI Video Pipeline
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 */2 * * *'   # every 2 hours (10 videos/day)
 
 jobs:
   generate:
     runs-on: ubuntu-latest
+
     strategy:
+      fail-fast: false
       matrix:
         vid: [1,2,3,4,5,6,7,8,9,10]
 
+    env:
+      VIDEO_ID: ${{ matrix.vid }}
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      - run: pip install -r requirements.txt
-      - run: python scripts/trending_scraper.py
-      - run: python scripts/hook_generator.py
-      - run: python scripts/generate_script.py
-      - run: python scripts/generate_voice.py
-      - run: python scripts/generate_video.py
-      - run: python scripts/generate_metadata.py
-      - run: python scripts/upload_all.py
+
+      - name: 📦 Install Dependencies
+        run: pip install -r requirements.txt
+
+      # 🔥 Create unique working directory
+      - name: 📁 Create workspace
+        run: |
+          mkdir -p output/video_$VIDEO_ID
+          mkdir -p temp/video_$VIDEO_ID
+
+      # 🔥 Generate unique content
+      - name: 📈 Fetch Trending Topics
+        run: python scripts/trending_scraper.py $VIDEO_ID
+
+      - name: 🎯 Generate Hook
+        run: python scripts/hook_generator.py $VIDEO_ID
+
+      - name: 🧠 Generate Script
+        run: python scripts/generate_script.py $VIDEO_ID
+
+      - name: 🎤 Generate Voice
+        run: python scripts/generate_voice.py $VIDEO_ID
+
+      - name: 🎬 Generate Video
+        run: python scripts/generate_video.py $VIDEO_ID
+
+      - name: 🏷️ Generate Metadata
+        run: python scripts/generate_metadata.py $VIDEO_ID
+
+      # 🔥 Upload with retry (VERY IMPORTANT)
+      - name: 🌍 Upload to All Platforms
+        run: |
+          for i in 1 2 3; do
+            python scripts/upload_all.py $VIDEO_ID && break
+            echo "Retry $i..."
+            sleep 10
+          done
+
+      # 🔥 Save artifact (for debugging + reuse)
+      - name: 📦 Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-${{ matrix.vid }}
+          path: output/video_${{ matrix.vid }}
