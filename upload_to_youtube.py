@@ -1,67 +1,39 @@
 import os
 import json
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
+import subprocess
 
-print("=== YouTube Upload Started ===")
+print("=== Simple YouTube Upload Using Cookies ===")
 
-creds = Credentials(
-    None,
-    refresh_token=os.getenv("REFRESH_TOKEN"),
-    token_uri="https://oauth2.googleapis.com/token",
-    client_id=os.getenv("CLIENT_ID"),
-    client_secret=os.getenv("CLIENT_SECRET"),
-    scopes=["https://www.googleapis.com/auth/youtube.upload"]
-)
-
-print("Trying to refresh token...")
-
-try:
-    creds.refresh(Request())
-    print("✅ Token refreshed successfully!")
-except Exception as e:
-    print("❌ TOKEN REFRESH FAILED")
-    print("Error:", str(e))
-    print("\n" + "="*60)
-    print("WHAT TO DO NOW:")
-    print("1. Go to: https://developers.google.com/oauthplayground")
-    print("2. Click gear icon → Use your own OAuth credentials")
-    print("3. Paste your CLIENT_ID and CLIENT_SECRET")
-    print("4. Authorize the scope: https://www.googleapis.com/auth/youtube.upload")
-    print("5. Copy the NEW Refresh Token")
-    print("6. Update the REFRESH_TOKEN secret in GitHub")
-    print("="*60)
-    raise
-
-print("Building YouTube service...")
-youtube = build("youtube", "v3", credentials=creds)
-
+# Load metadata
 with open("output/metadata.json", "r", encoding="utf-8") as f:
     meta = json.load(f)
 
-media = MediaFileUpload("output/story_video.mp4", chunksize=-1, resumable=True)
+video_file = "output/story_video.mp4"
 
-request = youtube.videos().insert(
-    part="snippet,status",
-    body={
-        "snippet": {
-            "title": meta["title"],
-            "description": meta["description"],
-            "tags": meta["tags"],
-            "categoryId": "22"
-        },
-        "status": {
-            "privacyStatus": "unlisted",     # Change to "public" when ready
-            "selfDeclaredMadeForKids": True
-        }
-    },
-    media_body=media
-)
+print(f"Uploading: {meta['title']}")
 
-print("Uploading video to YouTube...")
-response = request.execute()
+# Command using yt-dlp with cookies
+cmd = [
+    "yt-dlp",
+    "--cookies-from-browser", "chrome",   # Change to "firefox" or "edge" if you use different browser
+    "--username", "sandeep14394413@gmail.com",   # ← CHANGE TO YOUR GMAIL
+    "--password", "",                        # Leave empty - it will prompt or use cookies
+    "--title", meta["title"],
+    "--description", meta["description"],
+    "--tags", ",".join(meta["tags"]),
+    "--privacy", "unlisted",                 # Change to "public" when ready
+    "--no-mtime",
+    video_file
+]
 
-print("✅ SUCCESS! Video uploaded!")
-print("Video URL: https://youtu.be/" + response["id"])
+try:
+    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    print("✅ Upload command executed!")
+    print(result.stdout)
+except subprocess.CalledProcessError as e:
+    print("❌ Upload failed")
+    print(e.stderr)
+    print("\nCommon fixes:")
+    print("1. Make sure you are logged into Chrome with your YouTube Gmail")
+    print("2. Try changing '--cookies-from-browser chrome' to 'firefox' or 'edge'")
+    print("3. Run 'yt-dlp --cookies-from-browser chrome' locally first to test")
