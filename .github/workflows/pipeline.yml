@@ -1,16 +1,16 @@
-name: Generate & Auto-Upload Story Video to YouTube
+name: Generate Story Video & Upload to YouTube
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:                    # Run manually
   schedule:
-    - cron: '0 4 * * *'   # Runs daily at 4 AM UTC
+    - cron: '0 5 * * *'                 # Daily at 5 AM UTC (change as needed)
 
 jobs:
-  create-and-upload:
+  generate-and-upload:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -20,15 +20,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y ffmpeg
-          pip install google-api-python-client google-auth-oauthlib edge-tts requests
+          sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu
+          pip install -r requirements.txt
 
       - name: Generate Story Video
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python generate_story.py
 
-      - name: Upload to YouTube
+      - name: Upload Video to YouTube
         env:
           CLIENT_ID: ${{ secrets.CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
