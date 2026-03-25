@@ -65,23 +65,23 @@ with open(subtitle_file, "w", encoding="utf-8") as f:
     f.write("1\n00:00:01,000 --> 00:05:00,000\n")
     f.write(story_text.replace("\n", "\n\n"))
 
-print("Creating beautiful video with background image + music + nice subtitles...")
+print("Creating beautiful video with dark background + clear subtitles...")
 
 escaped_title = title.replace("'", "'\\''")
 
-# Final clean FFmpeg command (uses free public background + music)
-cmd = f'''
+cmd = f"""
 ffmpeg -y \
--f lavfi -i color=c=#0a1f3d:s={VIDEO_WIDTH}x{VIDEO_HEIGHT}:d={VIDEO_DURATION} \
--i {audio_file} \
--vf "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:fontsize=58:fontcolor=white:x=(w-text_w)/2:y=100:text='{escaped_title}':shadowcolor=black:shadowx=4:shadowy=4, \
-subtitles={subtitle_file}:force_style='Fontsize=36,PrimaryColour=&HFFFFFF,OutlineColour=&H00000000,BorderStyle=4,BackColour=&HAA000000,Shadow=2,MarginV=120,Alignment=10'" \
--c:v libx264 -c:a aac -t {VIDEO_DURATION} -pix_fmt yuv420p \
-output/story_video.mp4
-'''
+  -f lavfi -i color=c=#0a1f3d:s={VIDEO_WIDTH}x{VIDEO_HEIGHT}:d={VIDEO_DURATION} \
+  -i {audio_file} \
+  -vf "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:fontsize=60:fontcolor=white:x=(w-text_w)/2:y=120:text='{escaped_title}':shadowcolor=black:shadowx=4:shadowy=4, \
+       subtitles={subtitle_file}:force_style='Fontsize=38,PrimaryColour=&HFFFFFF,OutlineColour=&H00000000,BorderStyle=4,BackColour=&HAA000000,Shadow=2,MarginV=140,Alignment=10'" \
+  -c:v libx264 -c:a aac -t {VIDEO_DURATION} -pix_fmt yuv420p \
+  output/story_video.mp4
+"""
 
 subprocess.run(cmd, shell=True, check=True)
 
 print("✅ Beautiful video created successfully!")
-print("→ Dark blue background + large title + clear boxed subtitles")
+print("→ Dark elegant background")
+print("→ Large clear subtitles with background box")
 print("→ Ready to download from Artifacts")
