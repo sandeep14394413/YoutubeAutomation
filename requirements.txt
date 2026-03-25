@@ -1,3 +1,6 @@
-gtts
-moviepy
+google-generativeai
+edge-tts
+google-api-python-client
+google-auth-oauthlib
 requests
+pillow
