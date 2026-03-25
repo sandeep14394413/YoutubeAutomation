@@ -13,7 +13,7 @@ STORY_PROMPT = """Write a complete, engaging moral story for kids (age 4-8)
 about {topic}. The story should be 550-750 words, have a clear beginning, 
 middle and end, and teach a good moral lesson. Make it fun and easy to understand."""
 
-VOICE = "en-US-AvaNeural"
+VOICE = "en-US-AvaNeural"   # Warm female voice
 
 VIDEO_DURATION = 300
 VIDEO_WIDTH = 1080
@@ -52,34 +52,38 @@ title = "The Honest Little Rabbit | Moral Story for Kids"
 
 metadata = {
     "title": title,
-    "description": f"{story_text[:250]}...\n\n🤖 AI Generated Moral Story for Kids\n#kidsstories #moralstories #storytime",
+    "description": f"{story_text[:250]}...\n\n🤖 AI Generated Moral Story for Kids\n#kidsstories #moralstories #storytime #bedtimestory",
     "tags": ["kids story", "moral story", "bedtime story", "ai story", "storytime"]
 }
 
 with open("output/metadata.json", "w", encoding="utf-8") as f:
     json.dump(metadata, f, indent=4)
 
-# Subtitle file (clean way for long text)
+# Subtitle file
 subtitle_file = "output/subtitles.srt"
 with open(subtitle_file, "w", encoding="utf-8") as f:
     f.write("1\n00:00:01,000 --> 00:05:00,000\n")
     f.write(story_text.replace("\n", "\n\n"))
 
-# Escape title safely BEFORE f-string
-escaped_title = title.replace("'", "'\\''")
+print("Creating beautiful video with background + music + animated subtitles...")
 
-print("Creating video with FFmpeg (title + subtitles)...")
+escaped_title = title.replace("'", "'\\''")
 
 cmd = f'''
 ffmpeg -y \
--f lavfi -i color=c=black:s={VIDEO_WIDTH}x{VIDEO_HEIGHT}:d={VIDEO_DURATION} \
+-i https://assets.mixkit.co/videos/preview/12345/12345-small.mp4 \   # Soft nature background (replace if needed)
 -i {audio_file} \
--vf "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:fontsize=60:fontcolor=white:x=(w-text_w)/2:y=150:text='{escaped_title}', \
-subtitles={subtitle_file}:force_style='Fontsize=36,PrimaryColour=&HFFFFFF,OutlineColour=&H00000000,BorderStyle=3,BackColour=&H80000000,Shadow=0,MarginV=80'" \
+-i https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3 \   # Calm background music (replace with better free link)
+-filter_complex "[0:v]scale={VIDEO_WIDTH}:{VIDEO_HEIGHT},loop=loop=-1:size=1:start=0[v]; \
+ [v]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:fontsize=60:fontcolor=white:x=(w-text_w)/2:y=120:text='{escaped_title}':shadowcolor=black:shadowx=3:shadowy=3[title]; \
+ [title]subtitles={subtitle_file}:force_style='Fontsize=38,PrimaryColour=&HFFFFFF,OutlineColour=&H00000000,BorderStyle=4,BackColour=&H80000000,Shadow=2,MarginV=100,Alignment=10'[outv]" \
+-map "[outv]" -map 1:a -map 2:a \
+-filter_complex "[1:a][2:a]amix=inputs=2:duration=first:dropout_transition=2[aout]" \
 -c:v libx264 -c:a aac -t {VIDEO_DURATION} -pix_fmt yuv420p \
 output/story_video.mp4
 '''
 
 subprocess.run(cmd, shell=True, check=True)
 
-print("✅ Video created successfully: output/story_video.mp4")
+print("✅ Beautiful video created: output/story_video.mp4")
+print("It now has background, calm music, and nice animated subtitles!")
