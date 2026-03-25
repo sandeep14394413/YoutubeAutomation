@@ -7,7 +7,8 @@ import google.genai as genai
 from google.genai.types import GenerateContentConfig
 
 # ====================== CONFIG ======================
-GEMINI_MODEL = "gemini-2.5-flash"
+# Using gemini-1.5-flash instead of 2.5 (more stable right now)
+GEMINI_MODEL = "gemini-1.5-flash"
 
 STORY_PROMPT = """Write a complete, engaging moral story for kids (age 4-8) 
 about {topic}. The story should be 550-750 words, have a clear beginning, 
@@ -25,14 +26,26 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 topic = "honesty and friendship"
 prompt = STORY_PROMPT.format(topic=topic)
 
-print("Generating story...")
-response = client.models.generate_content(
-    model=GEMINI_MODEL,
-    contents=prompt,
-    config=GenerateContentConfig(temperature=0.7)
-)
+print("Generating story with Gemini 1.5 Flash...")
 
-story_text = response.text.strip() if response.text else "No story generated."
+try:
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=prompt,
+        config=GenerateContentConfig(temperature=0.7)
+    )
+    story_text = response.text.strip() if response.text else "No story generated."
+except Exception as e:
+    print(f"Gemini API Error: {e}")
+    print("Trying fallback model...")
+    # Fallback to gemini-1.5-pro (slower but usually more available)
+    response = client.models.generate_content(
+        model="gemini-1.5-pro",
+        contents=prompt,
+        config=GenerateContentConfig(temperature=0.7)
+    )
+    story_text = response.text.strip() if response.text else "No story generated."
+
 print(f"Story generated! Length: {len(story_text)} characters")
 
 os.makedirs("output", exist_ok=True)
@@ -65,7 +78,7 @@ with open(subtitle_file, "w", encoding="utf-8") as f:
     f.write("1\n00:00:01,000 --> 00:05:00,000\n")
     f.write(story_text.replace("\n", "\n\n"))
 
-print("Creating beautiful video with dark background + clear subtitles...")
+print("Creating video with dark elegant background + clear subtitles...")
 
 escaped_title = title.replace("'", "'\\''")
 
@@ -81,7 +94,5 @@ ffmpeg -y \
 
 subprocess.run(cmd, shell=True, check=True)
 
-print("✅ Beautiful video created successfully!")
-print("→ Dark elegant background")
-print("→ Large clear subtitles with background box")
-print("→ Ready to download from Artifacts")
+print("✅ Video created successfully!")
+print("→ Dark elegant background + large clear subtitles")
