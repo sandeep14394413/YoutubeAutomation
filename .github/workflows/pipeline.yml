@@ -1,12 +1,10 @@
-name: Generate Story Video & Upload to YouTube
+name: Generate Story Video (Manual Upload)
 
 on:
-  workflow_dispatch:                    # Run manually
-  schedule:
-    - cron: '0 5 * * *'                 # Daily at 5 AM UTC (change as needed)
+  workflow_dispatch:
 
 jobs:
-  generate-and-upload:
+  generate-video:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,9 +26,14 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python generate_story.py
 
-      - name: Upload Video to YouTube
-        env:
-          CLIENT_ID: ${{ secrets.CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
-          REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
-        run: python upload_to_youtube.py
+      - name: Upload Video as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: story-video
+          path: output/story_video.mp4
+          retention-days: 7
+
+      - name: Show Result
+        run: |
+          echo "✅ Video generation completed!"
+          echo "Download the video from the 'Artifacts' section below."
