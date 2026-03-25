@@ -5,7 +5,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
-print("=== Starting YouTube Upload Debug ===")
+print("=== YouTube Upload Started ===")
 
 creds = Credentials(
     None,
@@ -16,17 +16,26 @@ creds = Credentials(
     scopes=["https://www.googleapis.com/auth/youtube.upload"]
 )
 
-print("Attempting to refresh token...")
+print("Trying to refresh token...")
 
 try:
     creds.refresh(Request())
     print("✅ Token refreshed successfully!")
 except Exception as e:
-    print("❌ Refresh failed!")
-    print("Error type:", type(e).__name__)
-    print("Full error message:", str(e))
+    print("❌ TOKEN REFRESH FAILED")
+    print("Error:", str(e))
+    print("\n" + "="*60)
+    print("WHAT TO DO NOW:")
+    print("1. Go to: https://developers.google.com/oauthplayground")
+    print("2. Click gear icon → Use your own OAuth credentials")
+    print("3. Paste your CLIENT_ID and CLIENT_SECRET")
+    print("4. Authorize the scope: https://www.googleapis.com/auth/youtube.upload")
+    print("5. Copy the NEW Refresh Token")
+    print("6. Update the REFRESH_TOKEN secret in GitHub")
+    print("="*60)
     raise
 
+print("Building YouTube service...")
 youtube = build("youtube", "v3", credentials=creds)
 
 with open("output/metadata.json", "r", encoding="utf-8") as f:
@@ -44,14 +53,15 @@ request = youtube.videos().insert(
             "categoryId": "22"
         },
         "status": {
-            "privacyStatus": "unlisted",
+            "privacyStatus": "unlisted",     # Change to "public" when ready
             "selfDeclaredMadeForKids": True
         }
     },
     media_body=media
 )
 
-print("Uploading video...")
+print("Uploading video to YouTube...")
 response = request.execute()
+
 print("✅ SUCCESS! Video uploaded!")
 print("Video URL: https://youtu.be/" + response["id"])
