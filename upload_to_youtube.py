@@ -10,30 +10,30 @@ with open("output/metadata.json", "r", encoding="utf-8") as f:
 
 video_file = "output/story_video.mp4"
 
-print(f"Uploading: {meta['title']}")
+print(f"Uploading video: {meta['title']}")
 
-# Command using yt-dlp with cookies
+# yt-dlp upload command
 cmd = [
     "yt-dlp",
-    "--cookies-from-browser", "chrome",   # Change to "firefox" or "edge" if you use different browser
-    "--username", "sandeep14394413@gmail.com",   # ← CHANGE TO YOUR GMAIL
-    "--password", "",                        # Leave empty - it will prompt or use cookies
+    "--cookies-from-browser", "chrome",           # Change to "firefox" if you use Firefox
+    "--username", "sandeep14394413@gmail.com",    # ← YOUR GMAIL
+    "--password", "",                             # Leave empty
     "--title", meta["title"],
     "--description", meta["description"],
     "--tags", ",".join(meta["tags"]),
-    "--privacy", "unlisted",                 # Change to "public" when ready
-    "--no-mtime",
+    "--privacy", "unlisted",                      # Change to "public" later
     video_file
 ]
 
 try:
     result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-    print("✅ Upload command executed!")
+    print("✅ Upload command executed successfully!")
     print(result.stdout)
 except subprocess.CalledProcessError as e:
     print("❌ Upload failed")
+    print("Error output:")
     print(e.stderr)
-    print("\nCommon fixes:")
-    print("1. Make sure you are logged into Chrome with your YouTube Gmail")
-    print("2. Try changing '--cookies-from-browser chrome' to 'firefox' or 'edge'")
-    print("3. Run 'yt-dlp --cookies-from-browser chrome' locally first to test")
+    print("\nTips:")
+    print("- Make sure you are logged into Chrome with your Gmail")
+    print("- Try changing 'chrome' to 'firefox' or 'edge'")
+    print("- First test locally: yt-dlp --cookies-from-browser chrome --version")
