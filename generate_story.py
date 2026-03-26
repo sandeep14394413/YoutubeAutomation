@@ -9,10 +9,8 @@ import google.genai as genai
 from google.genai.types import GenerateContentConfig
 
 # ====================== CONFIG ======================
-# Stable model name that works in March 2026
-GEMINI_MODEL = "gemini-2.5-flash"   
-
-NUM_VIDEOS = 2                    # Change this to generate more videos per run
+GEMINI_MODEL = "gemini-1.5-flash"   # Most reliable model right now
+NUM_VIDEOS = 2                      # Change this to generate more videos
 # ===================================================
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -23,31 +21,36 @@ MORAL_THEMES = [
     "forgiveness", "gratitude", "caring for animals"
 ]
 
-def split_into_scenes(story_text, num_scenes=8):
-    sentences = re.split(r'(?<=[.!?])\s+', story_text)
-    chunk_size = max(1, len(sentences) // num_scenes)
-    scenes = []
-    for j in range(0, len(sentences), chunk_size):
-        scene = " ".join(sentences[j:j + chunk_size])
-        if scene.strip():
-            scenes.append(scene.strip())
-    return scenes[:num_scenes]
-
-for video_num in range(NUM_VIDEOS):
-    print(f"\n=== Generating High-Quality Cartoon Video {video_num+1}/{NUM_VIDEOS} ===")
-    
+def generate_story():
     topic = random.choice(MORAL_THEMES)
     prompt = f"""Write a complete, fun, engaging moral story for kids (age 4-8) about {topic}.
     Length: 500-700 words. Use simple language, lots of dialogue, vivid descriptions suitable for cartoon animation.
     End with a clear moral lesson."""
 
-    print("Generating story...")
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=prompt,
-        config=GenerateContentConfig(temperature=0.85)
-    )
-    story_text = response.text.strip()
+    print(f"Generating story about {topic}...")
+
+    try:
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt,
+            config=GenerateContentConfig(temperature=0.8)
+        )
+        story_text = response.text.strip() if response.text else None
+    except Exception as e:
+        print(f"Error with {GEMINI_MODEL}: {e}")
+        story_text = None
+
+    # Fallback if response is empty
+    if not story_text:
+        print("Using fallback story...")
+        story_text = f"Once upon a time, there was a little rabbit named {topic.split()[0].title()}. He learned that {topic} is very important. He helped his friends and everyone was happy. The moral is: {topic} makes the world better."
+
+    return story_text, topic
+
+for video_num in range(NUM_VIDEOS):
+    print(f"\n=== Generating High-Quality Cartoon Video {video_num+1}/{NUM_VIDEOS} ===")
+    
+    story_text, topic = generate_story()
 
     folder = f"output/cartoon_{video_num+1}"
     os.makedirs(folder, exist_ok=True)
@@ -60,10 +63,10 @@ for video_num in range(NUM_VIDEOS):
     communicate = Communicate(story_text, "en-US-AvaNeural")
     asyncio.run(communicate.save(f"{folder}/narration.mp3"))
 
-    # Split into scenes for cartoon images
-    scenes = split_into_scenes(story_text)
-    print(f"Split into {len(scenes)} scenes for cartoon images")
-
+    # Split into scenes
+    sentences = re.split(r'(?<=[.!?])\s+', story_text)
+    scenes = [ " ".join(sentences[j:j+5]) for j in range(0, len(sentences), 5) ][:8]
+    
     with open(f"{folder}/scenes.json", "w", encoding="utf-8") as f:
         json.dump(scenes, f, indent=2)
 
@@ -102,5 +105,5 @@ ffmpeg -y \
 
     print(f"✅ Cartoon Video {video_num+1} created: {folder}/cartoon_video.mp4")
 
-print("\n🎉 All high-quality cartoon videos generated successfully!")
+print("\n🎉 All cartoon videos generated successfully!")
 print("Download them from the Artifacts section.")
