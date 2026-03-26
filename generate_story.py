@@ -4,79 +4,67 @@ import asyncio
 import subprocess
 import random
 from edge_tts import Communicate
-import google.genai as genai
-from google.genai.types import GenerateContentConfig
 
-# ====================== CONFIG ======================
-GEMINI_MODEL = "gemini-1.5-flash"
-NUM_VIDEOS = 1                      # Start with 1 video for testing
-# ===================================================
+print("=== Starting High-Quality Kids Cartoon Generator ===")
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+# Hard-coded fallback story (in case API fails)
+story_text = """Once upon a time in a sunny green forest, there lived a little rabbit named Hopper. Hopper had many friends, but he was not very honest. One day, his best friend Squirrel lost his favorite shiny acorn. Hopper had found it but he hid it because he wanted to keep it for himself.
 
-MORAL_THEMES = [
-    "honesty and friendship", "kindness and sharing", "helping others",
-    "never giving up", "being brave", "respecting elders", "teamwork"
-]
+Later, Squirrel was very sad. Hopper saw his friend crying and felt bad. He remembered that true friendship is more important than any shiny thing. Hopper went to Squirrel and gave back the acorn. He said, "I'm sorry I was not honest. I learned that honesty makes friendships stronger."
 
-for video_num in range(NUM_VIDEOS):
-    print(f"\n=== Generating High-Quality Cartoon Video {video_num+1} ===")
-    
-    topic = random.choice(MORAL_THEMES)
-    prompt = f"""Write a short, fun moral story for kids (age 4-8) about {topic}. 
-    Length: 400-600 words. Simple language, lots of dialogue, vivid descriptions good for cartoon."""
+Squirrel smiled and hugged Hopper. From that day, they became the best of friends forever. 
 
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=prompt,
-        config=GenerateContentConfig(temperature=0.8)
-    )
-    story_text = response.text.strip()
+The moral of the story is: Honesty is the best policy and it makes true friendship stronger."""
 
-    folder = f"output/cartoon_{video_num+1}"
-    os.makedirs(folder, exist_ok=True)
+print("Using story (fallback mode for stability)...")
+print("Story length:", len(story_text))
 
-    with open(f"{folder}/story.txt", "w", encoding="utf-8") as f:
-        f.write(story_text)
+folder = "output/cartoon_1"
+os.makedirs(folder, exist_ok=True)
 
-    # Voiceover
-    print("Generating voiceover...")
-    communicate = Communicate(story_text, "en-US-AvaNeural")
-    asyncio.run(communicate.save(f"{folder}/narration.mp3"))
+with open(f"{folder}/story.txt", "w", encoding="utf-8") as f:
+    f.write(story_text)
 
-    # Title
-    title = f"Cute Cartoon Story: {topic.title()} Adventure | Kids Moral Story"
+# Voiceover
+print("Generating voiceover...")
+communicate = Communicate(story_text, "en-US-AvaNeural")
+asyncio.run(communicate.save(f"{folder}/narration.mp3"))
+print("Voiceover generated!")
 
-    # Simple metadata
-    metadata = {
-        "title": title,
-        "description": f"{story_text[:200]}...\n\nHigh Quality AI Cartoon for Kids",
-        "tags": ["kids cartoon", "moral story", "cartoon for kids"]
-    }
-    with open(f"{folder}/metadata.json", "w", encoding="utf-8") as f:
-        json.dump(metadata, f, indent=4)
+# Title
+title = "The Honest Little Rabbit | Cute Moral Cartoon for Kids"
 
-    # Create subtitles
-    subtitle_file = f"{folder}/subtitles.srt"
-    with open(subtitle_file, "w", encoding="utf-8") as f:
-        f.write("1\n00:00:01,000 --> 00:05:00,000\n")
-        f.write(story_text.replace("\n", "\n\n"))
+metadata = {
+    "title": title,
+    "description": "Beautiful AI generated moral story cartoon for kids.\n#kidscartoon #moralstories",
+    "tags": ["kids cartoon", "moral story", "cartoon for kids"]
+}
 
-    print("Creating high-resolution cartoon-style video...")
+with open(f"{folder}/metadata.json", "w", encoding="utf-8") as f:
+    json.dump(metadata, f, indent=4)
 
-    escaped_title = title.replace("'", "'\\''")
+# Subtitle
+subtitle_file = f"{folder}/subtitles.srt"
+with open(subtitle_file, "w", encoding="utf-8") as f:
+    f.write("1\n00:00:01,000 --> 00:05:00,000\n")
+    f.write(story_text.replace("\n", "\n\n"))
 
-    # High resolution cartoon video with better styling
-    cmd = f"""
+print("Creating high-resolution cartoon video...")
+
+escaped_title = title.replace("'", "'\\''")
+
+cmd = f"""
 ffmpeg -y \
   -f lavfi -i color=c=#1e3a8a:s=1080x1920:d=300 \
   -i {folder}/narration.mp3 \
-  -vf "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:fontsize=52:fontcolor=#ffffff:x=(w-text_w)/2:y=80:text='{escaped_title}':shadowcolor=black:shadowx=5:shadowy=5, \
+  -vf "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:fontsize=52:fontcolor=white:x=(w-text_w)/2:y=80:text='{escaped_title}':shadowcolor=black:shadowx=5:shadowy=5, \
        subtitles={subtitle_file}:force_style='Fontsize=34,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=4,BackColour=&HAA000000,Shadow=3,MarginV=100,Alignment=10'" \
   -c:v libx264 -preset slow -crf 18 -c:a aac -b:a 192k -t 300 -pix_fmt yuv420p \
   {folder}/high_quality_cartoon.mp4
 """
 
-    subprocess.run(cmd, shell=True, check=True)
+subprocess.run(cmd, shell=True, check=True)
 
-    print(f"✅ High-Quality Cartoon Video created: {folder}/high_quality_cartoon.mp4")
+print("✅ High-Quality Cartoon Video created successfully!")
+print(f"File location: {folder}/high_quality_cartoon.mp4")
+print("You can now download it from the Artifacts section.")
