@@ -9,10 +9,10 @@ import google.genai as genai
 from google.genai.types import GenerateContentConfig
 
 # ====================== CONFIG ======================
-# Most stable model as of March 2026
-GEMINI_MODEL = "gemini-1.5-pro"   
+# Most reliable model as of March 2026 on GitHub Actions
+GEMINI_MODEL = "gemini-1.5-flash"
 
-NUM_VIDEOS = 2                    # How many random cartoon videos to generate per run
+NUM_VIDEOS = 2                    # Change this to create more videos per run
 # ===================================================
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -60,11 +60,10 @@ for video_num in range(NUM_VIDEOS):
     communicate = Communicate(story_text, "en-US-AvaNeural")
     asyncio.run(communicate.save(f"{folder}/narration.mp3"))
 
-    # Split story into scenes for future cartoon images
+    # Split into scenes (for future cartoon images)
     scenes = split_into_scenes(story_text)
-    print(f"Split into {len(scenes)} scenes for cartoon images")
+    print(f"Split into {len(scenes)} scenes")
 
-    # Save scenes for future image generation
     with open(f"{folder}/scenes.json", "w", encoding="utf-8") as f:
         json.dump(scenes, f, indent=2)
 
@@ -79,13 +78,13 @@ for video_num in range(NUM_VIDEOS):
     with open(f"{folder}/metadata.json", "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=4)
 
-    # Subtitle file
+    # Subtitle
     subtitle_file = f"{folder}/subtitles.srt"
     with open(subtitle_file, "w", encoding="utf-8") as f:
         f.write("1\n00:00:01,000 --> 00:05:00,000\n")
         f.write(story_text.replace("\n", "\n\n"))
 
-    # Assemble video (dark elegant background + clear subtitles)
+    # Assemble video
     print("Assembling cartoon video...")
     escaped_title = title.replace("'", "'\\''")
 
@@ -104,4 +103,4 @@ ffmpeg -y \
     print(f"✅ Cartoon Video {video_num+1} created: {folder}/cartoon_video.mp4")
 
 print("\n🎉 All high-quality cartoon videos generated successfully!")
-print("Download them from the Artifacts section.")
+print("Download them from the Artifacts section in GitHub Actions.")
