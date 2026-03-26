@@ -1,10 +1,10 @@
-name: Generate Story Video (Manual Upload)
+name: Generate Cartoon Story Videos
 
 on:
   workflow_dispatch:
 
 jobs:
-  generate-video:
+  generate-videos:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,19 +21,14 @@ jobs:
           sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu
           pip install -r requirements.txt
 
-      - name: Generate Story Video
+      - name: Generate Cartoon Videos
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python generate_story.py
 
-      - name: Upload Video as Artifact
+      - name: Upload All Generated Videos as Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: story-video
-          path: output/story_video.mp4
-          retention-days: 7
-
-      - name: Show Result
-        run: |
-          echo "✅ Video generation completed!"
-          echo "Download the video from the 'Artifacts' section below."
+          name: cartoon-videos
+          path: output/cartoon_*/*.mp4
+          retention-days: 30
