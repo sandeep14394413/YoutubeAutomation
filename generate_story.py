@@ -9,10 +9,10 @@ import google.genai as genai
 from google.genai.types import GenerateContentConfig
 
 # ====================== CONFIG ======================
-# Most reliable model as of March 2026 on GitHub Actions
-GEMINI_MODEL = "gemini-1.5-flash"
+# Stable model name that works in March 2026
+GEMINI_MODEL = "gemini-2.5-flash"   
 
-NUM_VIDEOS = 2                    # Change this to create more videos per run
+NUM_VIDEOS = 2                    # Change this to generate more videos per run
 # ===================================================
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -60,9 +60,9 @@ for video_num in range(NUM_VIDEOS):
     communicate = Communicate(story_text, "en-US-AvaNeural")
     asyncio.run(communicate.save(f"{folder}/narration.mp3"))
 
-    # Split into scenes (for future cartoon images)
+    # Split into scenes for cartoon images
     scenes = split_into_scenes(story_text)
-    print(f"Split into {len(scenes)} scenes")
+    print(f"Split into {len(scenes)} scenes for cartoon images")
 
     with open(f"{folder}/scenes.json", "w", encoding="utf-8") as f:
         json.dump(scenes, f, indent=2)
@@ -103,4 +103,4 @@ ffmpeg -y \
     print(f"✅ Cartoon Video {video_num+1} created: {folder}/cartoon_video.mp4")
 
 print("\n🎉 All high-quality cartoon videos generated successfully!")
-print("Download them from the Artifacts section in GitHub Actions.")
+print("Download them from the Artifacts section.")
